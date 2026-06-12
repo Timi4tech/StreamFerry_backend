@@ -1,0 +1,32 @@
+name: Stream Ferry Ci/Cd pipeline
+   
+   
+on:
+  pull:
+    branches: 
+     - main 
+
+jobs:
+  deploy: 
+       name: deploy stream ferry
+       runs-on: ubuntu-lastest
+       steps: 
+         - name : checkout code
+           uses : actions/checkout@v4
+
+         - name : setup Node.js 22
+           uses : actions/setup-nide@v4
+
+         - name: setup Node.js 22
+           uses: actions/setup-node@v4
+           with: 
+           node-version: 22
+
+         - name: install dependencies
+           run: npm install
+
+         - name : check syntax
+           run: node --check server.js
+              
+
+        
