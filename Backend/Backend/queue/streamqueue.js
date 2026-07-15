@@ -1,5 +1,5 @@
 const {Queue} =   require ( "bullmq")
-const connection =  require("../config/ioredis.config")
+const connection =  require("../config/bullmqNodeRedisClient")
 
 const streamQueue = new Queue('streamQueue', {connection})
       .setGlobalConcurrency(400)

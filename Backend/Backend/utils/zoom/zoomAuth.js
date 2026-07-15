@@ -98,7 +98,7 @@ async function ensureZoomAccessToken(req,res) {
   const userId = req.session.user.id
   let accessToken = await redisClient.get(`zoom:accessToken:${userId}`);
   if (!accessToken) {
-    let refreshToken = await redisClient.get(`zoom:refreshToken:${userId}`);
+    const refreshToken = await redisClient.get(`zoom:refreshToken:${userId}`);
     const newTokens = await refreshZoomToken(refreshToken);
     accessToken = newTokens.accessToken;
     refreshToken = newTokens.refreshToken;

@@ -6,32 +6,23 @@ const routes = require('./routes');
 const google = require('./route/googleDriveRoutes');
 const route = require('./route/zoomRoutes');
 const onedrive = require('./route/oneDriveRoutes');
-const {env} = require("./config/env.config")
-const {logger} = require("./logger/logger")
-const {register,metricsMiddleware} = require("./middleware/metrics");
-const { error } = require('node:console');
+const connectDB = require('./db/mongooseClient');
+require('dotenv').config();
 
 const app = express();
-const PORT = env.PORT || 3001;
-app.use(metricsMiddleware)
+const PORT = process.env.PORT || 3001;
+
 // ─── Shared CORS origin ───────────────────────────────────────────────────────
+// ✅ Single source of truth — used for both Socket.io and Express middleware
+const ALLOWED_ORIGIN = process.env.FRONTEND_URL || "http://localhost:5173";
 
-const ALLOWED_ORIGIN = env.FRONTEND_URL;
 
+ 
 
 // ─── Express middleware ───────────────────────────────────────────────────────
 app.set('trust proxy', 1);
 
-app.get("/metrics",async(req,res)=>{
-  try{
-    res.send(await register.metrics())
-  }catch(err){
-   logger.error(`metrics monitoring error- $ {err}`,{
-    errorType:"OtherError",
-   })
-   res.status(500).json({error:err})
-  }
-})
+// ✅ FIX 4: Single cors() call using the shared ALLOWED_ORIGIN constant
 app.use(cors({
   origin: ALLOWED_ORIGIN,
   credentials: true,
@@ -44,17 +35,25 @@ app.use(cookieParser());
 app.use(
   session({
     name: 'zoom2drive.sid',
-    secret: env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     rolling: true,
     cookie: {
-      secure: false, 
+      secure: false, // ✅ only force secure in prod
       httpOnly: true,
       maxAge: 1000 * 60 * 30,
     },
   })
 );
+
+
+  
+
+
+
+connectDB()
+// ─── Auth guard ───────────────────────────────────────────────────────────────
 
 
 
@@ -64,9 +63,11 @@ app.get('/', (req, res) => {
     status: 'running',
     message: 'Zoom to Drive Backend API',
     timestamp: new Date().toISOString(),
-    environment: env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV || 'development',
   });
 });
+
+// ─── DB init ──────────────────────────────────────────────────────────────────
 
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
@@ -85,20 +86,20 @@ app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({
     error: 'Internal server error',
-    message: env.NODE_ENV === 'development' ? err.message : undefined,
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
   });
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  logger.info(`\n✅ Server running on port ${PORT}`);
+  console.log(`\n✅ Server running on port ${PORT}`);
 });
 
-// Graceful shutdown 
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+// ─── Graceful shutdown ────────────────────────────────────────────────────────
+/*process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
   server.close(() => {
-    logger.info('Server closed');
+    console.log('Server closed');
     process.exit(0);
   });
-});
+});*/

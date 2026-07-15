@@ -3,11 +3,8 @@ const connection = require('../config/bullmqNodeRedisClient')
 const {  syncOneDriveRecordings} = require('../utils/oneDriveRecordingsSync');
 const {syncRecordings} = require('../syncRecordings')
 const redisClient = require('../config/redis')
-const logger = reqire("../logger/logger")
 
-
- const googleStreamWorker =  async ()=>{
-  try{new Worker('googleQueue',async(job)=>{
+ const googleStreamWorker =  new Worker('googleQueue',async(job)=>{
   if(job.name==="startGoogleStream"){
     const{Folder,ZoomRecordings,Id} = job.data
     const key = `googleDrive_${job.id}`
@@ -25,11 +22,4 @@ const logger = reqire("../logger/logger")
     removeOnComplete: { count: 1000 },
     removeOnFail: { count: 5000 }})
 
-  }catch(error){
-    logger.error(`google stream worker failure - ${error}`,{
-      errorType: 'OtherError',
-      location: './worker/googledrive.stream.worker'
-    })
-  }
-}
     module.exports =  {googleStreamWorker}

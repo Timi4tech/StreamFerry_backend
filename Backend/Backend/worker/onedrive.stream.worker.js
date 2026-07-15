@@ -3,14 +3,11 @@ const connection = require('../config/bullmqNodeRedisClient')
 const {  syncOneDriveRecordings} = require('../utils/oneDriveRecordingsSync');
 const {syncRecordings} = require('../syncRecordings')
 const redisClient = require('../config/redis')
-const logger = reqire("../logger/logger")
 
-
- const googleStreamWorker =  async ()=>{
-  try{new Worker('googleQueue',async(job)=>{
-  if(job.name==="startGoogleStream"){
-    const{Folder,ZoomRecordings,Id} = job.data
-    const key = `googleDrive_${job.id}`
+const oneDriveStreamWorker =  new Worker('streamQueue',async(job)=>{
+  if(job.name==="startOneDriveStream"){
+      const{Folder,Token,ZoomRecordings,DriveToken} = job.data
+    const key = `oneDrive_${job.id}`
     
     const setIdempotency = await redisClient.set(
       key,'processing',{NX: true, Ex: 3600}
@@ -19,17 +16,13 @@ const logger = reqire("../logger/logger")
     if (!setIdempotency){
       return ;
     }
-    await syncRecordings(Folder,ZoomRecordings,Id)
+  
+    await syncOneDriveRecordings(Folder,Token,ZoomRecordings,DriveToken)
   }
 },{connection,
     removeOnComplete: { count: 1000 },
     removeOnFail: { count: 5000 }})
 
-  }catch(error){
-    logger.error(`google stream worker failure - ${error}`,{
-      errorType: 'OtherError',
-      location: './worker/googledrive.stream.worker'
-    })
-  }
-}
-    module.exports =  {googleStreamWorker}
+   
+
+    module.exports =  {oneDriveStreamWorker}

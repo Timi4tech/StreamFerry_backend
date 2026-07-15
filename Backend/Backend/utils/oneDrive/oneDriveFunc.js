@@ -1,10 +1,7 @@
 const axios = require ( "axios");
 const { ensureZoomAccessToken } = require("../zoom/zoomAuth");
 const redisClient = require('../../worker/redis')
-
-
 async function fetchFolders(accessToken, folderId = "root") {
-  
   const endpoint =
     folderId === "root"
       ? `https://graph.microsoft.com/v1.0/me/drive/root/children`
@@ -21,9 +18,7 @@ async function fetchFolders(accessToken, folderId = "root") {
       folderName: folder.name,
       driveId: folder.parentReference.driveId
     }));
-  
 }
-
 
 
 
